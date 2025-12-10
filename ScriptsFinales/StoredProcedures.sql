@@ -179,7 +179,7 @@ BEGIN
 END;
 GO
 
--- Crear Incidencia
+-- Crear Incidencia --
 -- SP para crear una incidencia con toda la informacion necesaria y luego la 
 USE Cooperativa;
 GO
