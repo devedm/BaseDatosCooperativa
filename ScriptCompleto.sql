@@ -1,9 +1,158 @@
+---- Creacion de Tablas ----
+CREATE DATABASE Cooperativa;
+GO
+USE Cooperativa;
+GO
+
+-- Usuario --
+CREATE TABLE Usuario (
+    UsuarioID INT PRIMARY KEY IDENTITY(1,1),
+    Cedula CHAR(9) NOT NULL CHECK (Cedula NOT LIKE '%[^0-9]%'),
+    Nombre NVARCHAR(50),
+    Apellido NVARCHAR(50),
+    Telefono NVARCHAR(8),
+    Correo NVARCHAR(50)
+);
+
+-- Estudiantes --
+CREATE TABLE Estudiantes (
+    EstudianteID INT PRIMARY KEY IDENTITY(1,1),
+    UsuarioID INT NOT NULL,
+    FOREIGN KEY (UsuarioID) REFERENCES Usuario(UsuarioID)
+);
+
+-- Empleado --
+CREATE TABLE Empleado (
+    EmpleadoID INT PRIMARY KEY IDENTITY(1,1),
+    UsuarioID INT UNIQUE NOT NULL,
+    FOREIGN KEY (UsuarioID) REFERENCES Usuario(UsuarioID)
+);
+
+-- Conductores --
+CREATE TABLE Conductores (
+    ConductorID INT PRIMARY KEY IDENTITY(1,1),
+    UsuarioID INT NOT NULL,
+    FOREIGN KEY (UsuarioID) REFERENCES Usuario(UsuarioID)
+);
+
+-- Licencia --
+CREATE TABLE Licencia (
+    LicenciaID INT PRIMARY KEY IDENTITY(1,1),
+    NumeroLicencia NVARCHAR(20) UNIQUE,
+    FechaExpiracion DATE,
+    ConductorID INT UNIQUE,
+    FOREIGN KEY (ConductorID) REFERENCES Conductores(ConductorID)
+);
+
+-- Vehiculos --
+CREATE TABLE Vehiculos (
+    VehiculoID INT PRIMARY KEY IDENTITY(1,1),
+    Placa NVARCHAR(20) UNIQUE,
+    Capacidad INT
+);
+
+-- Ocupacion --
+CREATE TABLE Ocupacion (
+    OcupacionID INT PRIMARY KEY IDENTITY(1,1),
+    VehiculoID INT NOT NULL,
+    NumeroAsiento INT NOT NULL,
+    EstudianteID INT NULL,
+    FOREIGN KEY (VehiculoID) REFERENCES Vehiculos(VehiculoID),
+    FOREIGN KEY (EstudianteID) REFERENCES Estudiantes(EstudianteID)
+);
+
+-- Rutas --
+CREATE TABLE Rutas (
+    RutaID INT PRIMARY KEY IDENTITY(1,1),
+    NombreRuta NVARCHAR(50),
+    Descripcion NVARCHAR(200)
+);
+
+-- Paradas --
+CREATE TABLE Paradas (
+    ParadaID INT PRIMARY KEY IDENTITY(1,1),
+    Nombre NVARCHAR(50),
+    Direccion NVARCHAR(200)
+);
+
+-- Tarifas --
+CREATE TABLE Tarifas (
+    TarifaID INT PRIMARY KEY IDENTITY(1,1),
+    Monto DECIMAL(10,2),
+    Descripcion NVARCHAR(100)
+);
+
+-- Paradas<->Rutas --
+CREATE TABLE ParadasRutas (
+    RutaID INT,
+    ParadaID INT,
+    PRIMARY KEY (RutaID, ParadaID),
+    FOREIGN KEY (RutaID) REFERENCES Rutas(RutaID),
+    FOREIGN KEY (ParadaID) REFERENCES Paradas(ParadaID)
+);
+
+-- Tarifas<->Rutas --
+CREATE TABLE TarifasRutas (
+    RutaID INT,
+    TarifaID INT,
+    PRIMARY KEY (RutaID, TarifaID),
+    FOREIGN KEY (RutaID) REFERENCES Rutas(RutaID),
+    FOREIGN KEY (TarifaID) REFERENCES Tarifas(TarifaID)
+);
+
+-- MetodoPago --
+CREATE TABLE MetodoPago (
+    MetodoPagoID INT PRIMARY KEY IDENTITY(1,1),
+    Nombre NVARCHAR(50)
+);
+
+-- Pagos --
+CREATE TABLE Pagos (
+    PagoID INT PRIMARY KEY IDENTITY(1,1),
+    EstudianteID INT NOT NULL,
+    MetodoPagoID INT NOT NULL,
+    TarifaID INT NOT NULL,
+    Monto DECIMAL(10,2),
+    FechaPago DATE,
+    FOREIGN KEY (EstudianteID) REFERENCES Estudiantes(EstudianteID),
+    FOREIGN KEY (MetodoPagoID) REFERENCES MetodoPago(MetodoPagoID),
+    FOREIGN KEY (TarifaID) REFERENCES Tarifas(TarifaID)
+);
+
+-- Incidencias --
+CREATE TABLE Incidencias (
+    IncidenciaID INT PRIMARY KEY IDENTITY(1,1),
+    EstudianteID INT NOT NULL,
+    Fecha DATE,
+    Descripcion NVARCHAR(200),
+    CodigoRuta INT NULL,
+    FOREIGN KEY (EstudianteID) REFERENCES Estudiantes(EstudianteID)
+);
+
+-- MantenimientoVehiculo --
+CREATE TABLE MantenimientoVehiculo (
+    MantenimientoID INT PRIMARY KEY IDENTITY(1,1),
+    VehiculoID INT NOT NULL,
+    Fecha DATE,
+    Descripcion NVARCHAR(200),
+    FOREIGN KEY (VehiculoID) REFERENCES Vehiculos(VehiculoID)
+);
+
+-- BitacoraAcceso --
+CREATE TABLE BitacoraAcceso (
+    BitacoraID INT PRIMARY KEY IDENTITY(1,1),
+    UsuarioID INT NOT NULL,
+    Accion NVARCHAR(200),
+    Fecha DATETIME2(0),
+    FOREIGN KEY (UsuarioID) REFERENCES Usuario(UsuarioID)
+);
+
 -- Inserts --
 
 USE Cooperativa;
 --Inserts de la tabla Usuario--
 INSERT INTO Usuario (Cedula, Nombre, Apellido, Telefono, Correo) VALUES 
-('110000001',N'ADMIN',N'ADMINISTRADOR',N'60000001',N'administrador@correo.com'),
+('110000001',N'Ana',N'Rodríguez',N'60000001',N'ana.rodriguez1@correo.com'),
 ('110000002',N'Luis',N'González',N'60000002',N'luis.gonzalez2@correo.com'),
 ('110000003',N'María',N'Jiménez',N'60000003',N'maria.jimenez3@correo.com'),
 ('110000004',N'Carlos',N'Mora',N'60000004',N'carlos.mora4@correo.com'),
@@ -844,4 +993,711 @@ INSERT INTO BitacoraAcceso (UsuarioID, Accion, Fecha) VALUES
 (49,'Cierre de sesión','2024-02-18 16:00'),
 (50,'Inicio de sesión','2024-02-19 17:00');
 
+GO
+
+---- Stored Procedores ----
+
+-- Crear Usuario --
+-- Crear un nuevo usuario con sus datos básicos, se va utilizar por otros SP nunca directamente--
+
+CREATE PROCEDURE sp_CrearUsuario
+    @Cedula CHAR(9),
+    @Nombre NVARCHAR(50),
+    @Apellido NVARCHAR(50),
+    @Telefono NVARCHAR(8),
+    @Correo NVARCHAR(50),
+    @NuevoUsuarioID INT OUTPUT
+AS
+BEGIN
+    INSERT INTO Usuario (Cedula, Nombre, Apellido, Telefono, Correo)
+    VALUES (@Cedula, @Nombre, @Apellido, @Telefono, @Correo);
+
+    SET @NuevoUsuarioID = SCOPE_IDENTITY();
+END;
+GO
+
+-- Insertar Estudiante --
+-- SP para insertar un estudiante y al mismo tiempo crear un usuario usando sp_CrearUsuario
+USE Cooperativa;
+GO
+
+CREATE PROCEDURE sp_CrearEstudiante
+    @Cedula CHAR(9),
+    @Nombre NVARCHAR(50),
+    @Apellido NVARCHAR(50),
+    @Telefono NVARCHAR(8),
+    @Correo NVARCHAR(50)
+AS
+BEGIN
+    DECLARE @UserID INT;
+
+    EXEC sp_CrearUsuario
+        @Cedula = @Cedula,
+        @Nombre = @Nombre,
+        @Apellido = @Apellido,
+        @Telefono = @Telefono,
+        @Correo = @Correo,
+        @NuevoUsuarioID = @UserID OUTPUT;
+
+    INSERT INTO Estudiantes (UsuarioID)
+    VALUES (@UserID);
+END;
+GO
+
+-- Insertar Empleado --
+-- SP para insertar un empleado y al mismo tiempo crear un usuario usando sp_CrearUsuario
+USE Cooperativa;
+GO
+
+CREATE PROCEDURE sp_CrearEmpleado
+    @Cedula CHAR(9),
+    @Nombre NVARCHAR(50),
+    @Apellido NVARCHAR(50),
+    @Telefono NVARCHAR(8),
+    @Correo NVARCHAR(50)
+AS
+BEGIN
+    DECLARE @UserID INT;
+
+    EXEC sp_CrearUsuario
+        @Cedula = @Cedula,
+        @Nombre = @Nombre,
+        @Apellido = @Apellido,
+        @Telefono = @Telefono,
+        @Correo = @Correo,
+        @NuevoUsuarioID = @UserID OUTPUT;
+
+    INSERT INTO Empleado (UsuarioID)
+    VALUES (@UserID);
+END;
+GO
+
+-- Insertar Conductor --
+-- SP para insertar un conductor y al mismo tiempo crear un usuario usando sp_CrearUsuario
+USE Cooperativa;
+GO
+
+CREATE PROCEDURE sp_CrearConductor
+    @Cedula CHAR(9),
+    @Nombre NVARCHAR(50),
+    @Apellido NVARCHAR(50),
+    @Telefono NVARCHAR(8),
+    @Correo NVARCHAR(50),
+    @NumeroLicencia NVARCHAR(20),
+    @FechaExpiracion DATE
+AS
+BEGIN
+    DECLARE @UserID INT, @ConductorID INT;
+
+    EXEC sp_CrearUsuario
+        @Cedula = @Cedula,
+        @Nombre = @Nombre,
+        @Apellido = @Apellido,
+        @Telefono = @Telefono,
+        @Correo = @Correo,
+        @NuevoUsuarioID = @UserID OUTPUT;
+
+    INSERT INTO Conductores (UsuarioID)
+    VALUES (@UserID);
+
+    SET @ConductorID = SCOPE_IDENTITY();
+
+    INSERT INTO Licencia (NumeroLicencia, FechaExpiracion, ConductorID)
+    VALUES (@NumeroLicencia, @FechaExpiracion, @ConductorID);
+END;
+GO
+
+-- Buscar Estudiantes por Cedula --
+-- SP para buscar estudiante por cedula
+USE Cooperativa;
+GO
+
+CREATE PROCEDURE sp_ConsultarEstudiantePorCedula
+    @Cedula CHAR(9)
+AS
+BEGIN
+    SELECT 
+        e.EstudianteID,
+        u.UsuarioID,
+        u.Cedula,
+        u.Nombre,
+        u.Apellido,
+        u.Telefono,
+        u.Correo
+    FROM Estudiantes e
+    INNER JOIN Usuario u ON e.UsuarioID = u.UsuarioID
+    WHERE u.Cedula = @Cedula;
+END;
+GO
+
+-- Buscar Conductor por Cedula --
+-- SP para buscar conductor por cedula
+USE Cooperativa;
+GO
+
+CREATE PROCEDURE sp_ConsultarConductorPorCedula
+    @Cedula CHAR(9)
+AS
+BEGIN
+    SELECT 
+        c.ConductorID,
+        u.UsuarioID,
+        u.Cedula,
+        u.Nombre,
+        u.Apellido,
+        u.Telefono,
+        u.Correo
+    FROM Conductores c
+    INNER JOIN Usuario u ON c.UsuarioID = u.UsuarioID
+    WHERE u.Cedula = @Cedula;
+END;
+GO
+
+-- Buscar Empleado por Cedula --
+-- SP para buscar empleado por cedula
+USE Cooperativa;
+GO
+
+CREATE PROCEDURE sp_ConsultarEmpleadoPorCedula
+    @Cedula CHAR(9)
+AS
+BEGIN
+    SELECT 
+        e.EmpleadoID,
+        u.UsuarioID,
+        u.Cedula,
+        u.Nombre,
+        u.Apellido,
+        u.Telefono,
+        u.Correo
+    FROM Empleado e
+    INNER JOIN Usuario u ON e.UsuarioID = u.UsuarioID
+    WHERE u.Cedula = @Cedula;
+END;
+GO
+
+-- Crear Incidencia
+-- SP para crear una incidencia con toda la informacion necesaria y luego la 
+USE Cooperativa;
+GO
+
+CREATE PROCEDURE sp_CrearIncidencia
+    @Cedula CHAR(9),
+    @RutaID INT,
+    @Fecha DATE,
+    @Descripcion NVARCHAR(200)
+AS
+BEGIN
+    DECLARE @EstudianteID INT;
+
+    SELECT @EstudianteID = e.EstudianteID
+    FROM Estudiantes e
+    INNER JOIN Usuario u ON e.UsuarioID = u.UsuarioID
+    WHERE u.Cedula = @Cedula;
+
+    -- Validar Estudiante
+    IF @EstudianteID IS NULL
+    BEGIN
+        PRINT 'No existe un estudiante con la cédula indicada';
+        RETURN;
+    END
+
+    -- Validar Ruta
+    IF NOT EXISTS (SELECT 1 FROM Rutas WHERE RutaID = @RutaID)
+    BEGIN
+        PRINT 'La ruta no existe';
+        RETURN;
+    END
+
+    INSERT INTO Incidencias (EstudianteID, CodigoRuta, Fecha, Descripcion)
+    VALUES (@EstudianteID, @RutaID, @Fecha, @Descripcion);
+
+    DECLARE @IncidenciaID INT = SCOPE_IDENTITY();
+
+    SELECT 
+        i.IncidenciaID,
+        i.EstudianteID,
+        u.Nombre,
+        u.Apellido,
+        u.Cedula,
+        i.CodigoRuta AS RutaID,
+        r.NombreRuta,
+        i.Fecha,
+        i.Descripcion
+    FROM Incidencias i
+    INNER JOIN Estudiantes e ON i.EstudianteID = e.EstudianteID
+    INNER JOIN Usuario u ON e.UsuarioID = u.UsuarioID
+    INNER JOIN Rutas r ON r.RutaID = i.CodigoRuta
+    WHERE i.IncidenciaID = @IncidenciaID;
+END;
+GO
+
+-- Insertar Vehiculo --
+-- SP para insertar vehiculo validando la placa y capacidad
+USE Cooperativa;
+GO
+
+CREATE PROCEDURE sp_InsertarVehiculo
+    @Placa NVARCHAR(20),
+    @Capacidad INT
+AS
+BEGIN
+
+    -- Validar placa
+    IF @Placa IS NULL OR LTRIM(RTRIM(@Placa)) = ''
+    BEGIN
+        PRINT 'La placa no es valida';
+        RETURN;
+    END
+
+    -- Validar capacidad
+    IF @Capacidad IS NULL OR @Capacidad <= 0
+    BEGIN
+        PRINT 'La capacidad debe ser mayor a 0';
+        RETURN;
+    END
+
+    -- Validar duplicado
+    IF EXISTS (SELECT 1 FROM Vehiculos WHERE Placa = @Placa)
+    BEGIN
+        PRINT 'Ya existe un vehículo con esta placa';
+        RETURN;
+    END
+
+    -- Insertar
+    INSERT INTO Vehiculos (Placa, Capacidad)
+    VALUES (@Placa, @Capacidad);
+
+    PRINT 'Vehiculo insertado correctamente';
+END;
+GO
+
+-- Insertar Tarifa --
+-- SP para insertar Tarifa
+USE Cooperativa;
+GO
+
+CREATE PROCEDURE sp_InsertarTarifa
+    @Monto DECIMAL(10,2),
+    @Descripcion NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validar monto
+    IF @Monto IS NULL OR @Monto <= 0
+    BEGIN
+        PRINT 'El monto debe ser mayor a 0';
+        RETURN;
+    END
+
+    -- Validar descripción
+    IF @Descripcion IS NULL OR LTRIM(RTRIM(@Descripcion)) = ''
+    BEGIN
+        PRINT 'La descripción no puede estar vacía';
+        RETURN;
+    END
+
+    -- Validar tarifa duplicada
+    IF EXISTS (SELECT 1 FROM Tarifas WHERE Monto = @Monto AND Descripcion = @Descripcion)
+    BEGIN
+        PRINT 'Ya existe una tarifa con el mismo monto y descripción';
+        RETURN;
+    END
+
+    -- Insertar tarifa
+    INSERT INTO Tarifas (Monto, Descripcion)
+    VALUES (@Monto, @Descripcion);
+
+    PRINT 'Tarifa insertada correctamente';
+END;
+GO
+
+-- Insertar Pago --
+-- SP para insertar Pago
+USE Cooperativa;
+GO
+
+CREATE PROCEDURE sp_InsertarPago
+    @EstudianteID INT,
+    @MetodoPagoID INT,
+    @TarifaID INT,
+    @Monto DECIMAL(10,2)
+AS
+BEGIN
+    -- Validar estudiante
+    IF NOT EXISTS (SELECT 1 FROM Estudiantes WHERE EstudianteID = @EstudianteID)
+    BEGIN
+        PRINT 'El EstudianteID no existe';
+        RETURN;
+    END
+
+    -- Validar método de pago
+    IF NOT EXISTS (SELECT 1 FROM MetodoPago WHERE MetodoPagoID = @MetodoPagoID)
+    BEGIN
+        PRINT 'El Método de Pago no existe';
+        RETURN;
+    END
+
+    -- Validar tarifa
+    IF NOT EXISTS (SELECT 1 FROM Tarifas WHERE TarifaID = @TarifaID)
+    BEGIN
+        PRINT 'La tarifa indicada no existe';
+        RETURN;
+    END
+    -- Validar monto
+    IF @Monto IS NULL OR @Monto <= 0
+    BEGIN
+        PRINT 'El monto debe ser mayor a 0';
+        RETURN;
+    END
+
+    -- Insertar pago
+    INSERT INTO Pagos (EstudianteID, MetodoPagoID, TarifaID, Monto, FechaPago)
+    VALUES (@EstudianteID, @MetodoPagoID, @TarifaID, @Monto, GETDATE());
+
+    PRINT 'Pago registrado correctamente';
+END;
+GO
+
+---- Funciones ----
+
+-- Nombre completo del usuario
+CREATE FUNCTION fn_NombreCompletoUsuario (@UsuarioID INT)
+RETURNS NVARCHAR(120)
+AS
+BEGIN
+    DECLARE @NombreCompleto NVARCHAR(120);
+
+    SELECT @NombreCompleto = CONCAT(Nombre, N' ', Apellido)
+    FROM Usuario
+    WHERE UsuarioID = @UsuarioID;
+
+    RETURN @NombreCompleto;
+END;
+GO
+
+-- Total pagado por un estudiante
+CREATE FUNCTION fn_TotalPagadoPorEstudiante (@EstudianteID INT)
+RETURNS DECIMAL(10,2)
+AS
+BEGIN
+    DECLARE @Total DECIMAL(10,2);
+
+    SELECT @Total = ISNULL(SUM(Monto),0)
+    FROM Pagos
+    WHERE EstudianteID = @EstudianteID;
+
+    RETURN @Total;
+END;
+GO
+
+-- Estado de la licencia (VIGENTE / VENCIDA)
+CREATE FUNCTION fn_EstadoLicencia (@ConductorID INT)
+RETURNS NVARCHAR(20)
+AS
+BEGIN
+    DECLARE @Estado NVARCHAR(20);
+
+    SELECT @Estado =
+        CASE 
+            WHEN FechaExpiracion IS NULL THEN N'SIN LICENCIA'
+            WHEN FechaExpiracion < CAST(GETDATE() AS DATE) THEN N'VENCIDA'
+            ELSE N'VIGENTE'
+        END
+    FROM Licencia
+    WHERE ConductorID = @ConductorID;
+
+    IF (@Estado IS NULL)
+        SET @Estado = N'SIN REGISTRO';
+
+    RETURN @Estado;
+END;
+GO
+
+-- Cantidad de incidencias de un estudiante
+CREATE FUNCTION fn_CantidadIncidenciasEstudiante (@EstudianteID INT)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @Cantidad INT;
+
+    SELECT @Cantidad = COUNT(*)
+    FROM Incidencias
+    WHERE EstudianteID = @EstudianteID;
+
+    RETURN @Cantidad;
+END;
+GO
+
+-- Capacidad disponible de un vehículo
+CREATE FUNCTION fn_CapacidadDisponibleVehiculo (@VehiculoID INT)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @Capacidad INT;
+    DECLARE @Ocupados INT;
+
+    SELECT @Capacidad = Capacidad
+    FROM Vehiculos
+    WHERE VehiculoID = @VehiculoID;
+
+    SELECT @Ocupados = COUNT(*)
+    FROM Ocupacion
+    WHERE VehiculoID = @VehiculoID;
+
+    IF (@Capacidad IS NULL) SET @Capacidad = 0;
+    IF (@Ocupados IS NULL)  SET @Ocupados = 0;
+
+    RETURN @Capacidad - @Ocupados;
+END;
+GO
+
+-- Monto de tarifa con descuento (%)
+CREATE FUNCTION fn_TarifaConDescuento (
+    @TarifaID INT,
+    @PorcentajeDescuento DECIMAL(5,2)
+)
+RETURNS DECIMAL(10,2)
+AS
+BEGIN
+    DECLARE @Monto DECIMAL(10,2);
+
+    SELECT @Monto = Monto
+    FROM Tarifas
+    WHERE TarifaID = @TarifaID;
+
+    IF (@Monto IS NULL)
+        SET @Monto = 0;
+
+    RETURN @Monto - (@Monto * @PorcentajeDescuento / 100);
+END;
+GO
+
+-- Último acceso registrado para un usuario
+CREATE FUNCTION fn_UltimoAccesoUsuario (@UsuarioID INT)
+RETURNS DATETIME2(0)
+AS
+BEGIN
+    DECLARE @Fecha DATETIME2(0);
+
+    SELECT @Fecha = MAX(Fecha)
+    FROM BitacoraAcceso
+    WHERE UsuarioID = @UsuarioID;
+
+    RETURN @Fecha;
+END;
+GO
+
+---- Vistas ----
+
+-- Vista de estudiantes con sus datos de usuario
+CREATE VIEW Vista_Estudiantes_Usuarios AS
+SELECT 
+    E.EstudianteID,
+    U.UsuarioID,
+    U.Cedula,
+    U.Nombre,
+    U.Apellido,
+    U.Telefono,
+    U.Correo
+FROM Estudiantes E
+INNER JOIN Usuario U
+    ON E.UsuarioID = U.UsuarioID;
+GO
+
+-- Vista de pagos por estudiante (incluye método y tarifa)
+CREATE VIEW Vista_Pagos_Estudiantes AS
+SELECT 
+    P.PagoID,
+    E.EstudianteID,
+    dbo.fn_NombreCompletoUsuario(E.UsuarioID) AS NombreEstudiante,
+    MP.Nombre AS MetodoPago,
+    T.Monto AS MontoTarifaBase,
+    P.Monto AS MontoPagado,
+    P.FechaPago
+FROM Pagos P
+INNER JOIN Estudiantes E
+    ON P.EstudianteID = E.EstudianteID
+INNER JOIN MetodoPago MP
+    ON P.MetodoPagoID = MP.MetodoPagoID
+INNER JOIN Tarifas T
+    ON P.TarifaID = T.TarifaID;
+GO
+
+-- Vista de conductores, su usuario y el estado de la licencia
+CREATE VIEW Vista_Conductores_Licencia AS
+SELECT 
+    C.ConductorID,
+    U.Cedula,
+    U.Nombre,
+    U.Apellido,
+    L.NumeroLicencia,
+    L.FechaExpiracion,
+    dbo.fn_EstadoLicencia(C.ConductorID) AS EstadoLicencia
+FROM Conductores C
+INNER JOIN Usuario U
+    ON C.UsuarioID = U.UsuarioID
+LEFT JOIN Licencia L
+    ON L.ConductorID = C.ConductorID;
+GO
+
+-- Vista de rutas con paradas y tarifas
+CREATE VIEW Vista_Rutas_Paradas_Tarifas AS
+SELECT 
+    R.RutaID,
+    R.NombreRuta,
+    R.Descripcion AS DescripcionRuta,
+    PA.ParadaID,
+    PA.Nombre AS NombreParada,
+    T.TarifaID,
+    T.Monto,
+    T.Descripcion AS DescripcionTarifa
+FROM Rutas R
+LEFT JOIN ParadasRutas PR
+    ON R.RutaID = PR.RutaID
+LEFT JOIN Paradas PA
+    ON PR.ParadaID = PA.ParadaID
+LEFT JOIN TarifasRutas TR
+    ON R.RutaID = TR.RutaID
+LEFT JOIN Tarifas T
+    ON TR.TarifaID = T.TarifaID;
+GO
+
+-- Vista de incidencias de estudiantes con nombre
+CREATE VIEW Vista_Incidencias_Estudiantes AS
+SELECT 
+    I.IncidenciaID,
+    I.Fecha,
+    I.Descripcion,
+    E.EstudianteID,
+    dbo.fn_NombreCompletoUsuario(E.UsuarioID) AS NombreEstudiante
+FROM Incidencias I
+INNER JOIN Estudiantes E
+    ON I.EstudianteID = E.EstudianteID;
+GO
+
+-- Vista de mantenimiento de vehículos
+CREATE VIEW Vista_Mantenimiento_Vehiculos AS
+SELECT 
+    M.MantenimientoID,
+    V.VehiculoID,
+    V.Placa,
+    V.Capacidad,
+    M.Fecha,
+    M.Descripcion
+FROM MantenimientoVehiculo M
+INNER JOIN Vehiculos V
+    ON M.VehiculoID = V.VehiculoID;
+GO
+
+
+---- Triggers ----
+-- Registrar insercion de estudiante --
+
+USE Cooperativa;
+GO
+
+CREATE TRIGGER trg_Estudiante_Insert
+ON Estudiantes
+AFTER INSERT
+AS
+BEGIN
+    INSERT INTO BitacoraAcceso (UsuarioID, Accion, Fecha)
+    SELECT 
+        i.UsuarioID, 
+        'Creación de estudiante', 
+        SYSDATETIME()
+    FROM inserted i;
+END;
+GO
+
+-- Registrar insercion de empleado  --
+
+CREATE TRIGGER trg_Empleado_Insert
+ON Empleado
+AFTER INSERT
+AS
+BEGIN
+    INSERT INTO BitacoraAcceso (UsuarioID, Accion, Fecha)
+    SELECT 
+        i.UsuarioID, 
+        'Creación de empleado', 
+        SYSDATETIME()
+    FROM inserted i;
+END;
+GO
+
+-- Registrar insercion de estudiante --
+
+USE Cooperativa;
+GO
+
+CREATE TRIGGER trg_Conductor_Insert
+ON Conductores
+AFTER INSERT
+AS
+BEGIN
+    INSERT INTO BitacoraAcceso (UsuarioID, Accion, Fecha)
+    SELECT 
+        i.UsuarioID, 
+        'Creación de conductor', 
+        SYSDATETIME()
+    FROM inserted i;
+END;
+GO
+
+-- Validar ocupacion vehiculo --
+
+CREATE TRIGGER trg_Ocupacion_ValidarCapacidad
+ON Ocupacion
+AFTER INSERT
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN Vehiculos v ON i.VehiculoID = v.VehiculoID
+        GROUP BY i.VehiculoID, v.Capacidad
+        HAVING COUNT(*) > v.Capacidad
+    )
+    BEGIN
+        RAISERROR ('Este vehiculo ya alcanzo su capacidad maxima.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END
+END;
+GO
+
+-- Registrar cambio de tarifa --
+
+CREATE TRIGGER trg_Tarifa_Update
+ON Tarifas
+AFTER UPDATE
+AS
+BEGIN
+    IF UPDATE(Monto)
+    BEGIN
+        INSERT INTO BitacoraAcceso (UsuarioID, Accion, Fecha)
+        SELECT 
+            1,  -- Usuario admin o generico
+            CONCAT('Actualizacion de tarifa ID ', i.TarifaID, ': nuevo monto ', i.Monto),
+            SYSDATETIME()
+        FROM inserted i;
+    END
+END;
+GO
+
+-- Validar monto de pago --
+
+CREATE TRIGGER trg_Pagos_ValidarMonto
+ON Pagos
+FOR INSERT
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM inserted WHERE Monto <= 0)
+    BEGIN
+        RAISERROR ('El monto del pago debe ser mayor a cero.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END
+END;
 GO

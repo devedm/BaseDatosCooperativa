@@ -1,4 +1,6 @@
--- 1) Vista de estudiantes con sus datos de usuario
+---- Vistas ----
+
+-- Vista de estudiantes con sus datos de usuario
 CREATE VIEW Vista_Estudiantes_Usuarios AS
 SELECT 
     E.EstudianteID,
@@ -13,7 +15,7 @@ INNER JOIN Usuario U
     ON E.UsuarioID = U.UsuarioID;
 GO
 
--- 2) Vista de pagos por estudiante (incluye método y tarifa)
+-- Vista de pagos por estudiante (incluye método y tarifa)
 CREATE VIEW Vista_Pagos_Estudiantes AS
 SELECT 
     P.PagoID,
@@ -32,7 +34,7 @@ INNER JOIN Tarifas T
     ON P.TarifaID = T.TarifaID;
 GO
 
--- 3) Vista de conductores, su usuario y el estado de la licencia
+-- Vista de conductores, su usuario y el estado de la licencia
 CREATE VIEW Vista_Conductores_Licencia AS
 SELECT 
     C.ConductorID,
@@ -49,7 +51,7 @@ LEFT JOIN Licencia L
     ON L.ConductorID = C.ConductorID;
 GO
 
--- 4) Vista de rutas con paradas y tarifas
+-- Vista de rutas con paradas y tarifas
 CREATE VIEW Vista_Rutas_Paradas_Tarifas AS
 SELECT 
     R.RutaID,
@@ -71,7 +73,7 @@ LEFT JOIN Tarifas T
     ON TR.TarifaID = T.TarifaID;
 GO
 
--- 5) Vista de incidencias de estudiantes con nombre
+-- Vista de incidencias de estudiantes con nombre
 CREATE VIEW Vista_Incidencias_Estudiantes AS
 SELECT 
     I.IncidenciaID,
@@ -84,7 +86,7 @@ INNER JOIN Estudiantes E
     ON I.EstudianteID = E.EstudianteID;
 GO
 
--- 6) Vista de mantenimiento de vehículos
+-- Vista de mantenimiento de vehículos
 CREATE VIEW Vista_Mantenimiento_Vehiculos AS
 SELECT 
     M.MantenimientoID,

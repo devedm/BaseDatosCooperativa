@@ -1,15 +1,59 @@
--- BitacoraAcceso --
-CREATE TRIGGER trg_Usuario_Insert
-ON Usuario
+---- Triggers ----
+-- Registrar insercion de estudiante --
+
+USE Cooperativa;
+GO
+
+CREATE TRIGGER trg_Estudiante_Insert
+ON Estudiantes
 AFTER INSERT
 AS
 BEGIN
     INSERT INTO BitacoraAcceso (UsuarioID, Accion, Fecha)
-    SELECT i.UsuarioID, 'Creacion de usuario', SYSDATETIME()
+    SELECT 
+        i.UsuarioID, 
+        'Creación de estudiante', 
+        SYSDATETIME()
     FROM inserted i;
 END;
 GO
 
+-- Registrar insercion de empleado  --
+
+CREATE TRIGGER trg_Empleado_Insert
+ON Empleado
+AFTER INSERT
+AS
+BEGIN
+    INSERT INTO BitacoraAcceso (UsuarioID, Accion, Fecha)
+    SELECT 
+        i.UsuarioID, 
+        'Creación de empleado', 
+        SYSDATETIME()
+    FROM inserted i;
+END;
+GO
+
+-- Registrar insercion de estudiante --
+
+USE Cooperativa;
+GO
+
+CREATE TRIGGER trg_Conductor_Insert
+ON Conductores
+AFTER INSERT
+AS
+BEGIN
+    INSERT INTO BitacoraAcceso (UsuarioID, Accion, Fecha)
+    SELECT 
+        i.UsuarioID, 
+        'Creación de conductor', 
+        SYSDATETIME()
+    FROM inserted i;
+END;
+GO
+
+-- Validar ocupacion vehiculo --
 
 CREATE TRIGGER trg_Ocupacion_ValidarCapacidad
 ON Ocupacion
@@ -30,16 +74,7 @@ BEGIN
 END;
 GO
 
-CREATE TRIGGER trg_Mantenimiento_RegistroIncidencia
-ON MantenimientoVehiculo
-AFTER INSERT
-AS
-BEGIN
-    INSERT INTO Incidencias (EstudianteID, Fecha, Descripcion)
-    SELECT NULL, i.Fecha, CONCAT('Mantenimiento aplicado al veh�culo ID ', i.VehiculoID)
-    FROM inserted i;
-END;
-GO
+-- Registrar cambio de tarifa --
 
 CREATE TRIGGER trg_Tarifa_Update
 ON Tarifas
@@ -50,14 +85,15 @@ BEGIN
     BEGIN
         INSERT INTO BitacoraAcceso (UsuarioID, Accion, Fecha)
         SELECT 
-            1,  -- Usuario admin o gen�rico
-            CONCAT('Actualizaci�n de tarifa ID ', i.TarifaID, ': nuevo monto ', i.Monto),
+            1,  -- Usuario admin o generico
+            CONCAT('Actualizacion de tarifa ID ', i.TarifaID, ': nuevo monto ', i.Monto),
             SYSDATETIME()
         FROM inserted i;
     END
 END;
 GO
 
+-- Validar monto de pago --
 
 CREATE TRIGGER trg_Pagos_ValidarMonto
 ON Pagos

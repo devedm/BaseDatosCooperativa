@@ -1,4 +1,4 @@
--- Creacion de Tablas --
+---- Creacion de Tablas ----
 CREATE DATABASE Cooperativa;
 GO
 USE Cooperativa;
@@ -125,6 +125,7 @@ CREATE TABLE Incidencias (
     EstudianteID INT NOT NULL,
     Fecha DATE,
     Descripcion NVARCHAR(200),
+    CodigoRuta INT NULL,
     FOREIGN KEY (EstudianteID) REFERENCES Estudiantes(EstudianteID)
 );
 

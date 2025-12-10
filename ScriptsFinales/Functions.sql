@@ -1,4 +1,4 @@
--- Funciones
+---- Funciones ----
 
 -- Nombre completo del usuario
 CREATE FUNCTION fn_NombreCompletoUsuario (@UsuarioID INT)
@@ -15,7 +15,7 @@ BEGIN
 END;
 GO
 
--- 2) Total pagado por un estudiante
+-- Total pagado por un estudiante
 CREATE FUNCTION fn_TotalPagadoPorEstudiante (@EstudianteID INT)
 RETURNS DECIMAL(10,2)
 AS
@@ -30,7 +30,7 @@ BEGIN
 END;
 GO
 
--- 3) Estado de la licencia (VIGENTE / VENCIDA)
+-- Estado de la licencia (VIGENTE / VENCIDA)
 CREATE FUNCTION fn_EstadoLicencia (@ConductorID INT)
 RETURNS NVARCHAR(20)
 AS
@@ -53,7 +53,7 @@ BEGIN
 END;
 GO
 
--- 4) Cantidad de incidencias de un estudiante
+-- Cantidad de incidencias de un estudiante
 CREATE FUNCTION fn_CantidadIncidenciasEstudiante (@EstudianteID INT)
 RETURNS INT
 AS
@@ -68,7 +68,7 @@ BEGIN
 END;
 GO
 
--- 5) Capacidad disponible de un vehículo
+-- Capacidad disponible de un vehículo
 CREATE FUNCTION fn_CapacidadDisponibleVehiculo (@VehiculoID INT)
 RETURNS INT
 AS
@@ -91,7 +91,7 @@ BEGIN
 END;
 GO
 
--- 6) Monto de tarifa con descuento (%)
+-- Monto de tarifa con descuento (%)
 CREATE FUNCTION fn_TarifaConDescuento (
     @TarifaID INT,
     @PorcentajeDescuento DECIMAL(5,2)
@@ -112,7 +112,7 @@ BEGIN
 END;
 GO
 
--- 7) Último acceso registrado para un usuario
+-- Último acceso registrado para un usuario
 CREATE FUNCTION fn_UltimoAccesoUsuario (@UsuarioID INT)
 RETURNS DATETIME2(0)
 AS
