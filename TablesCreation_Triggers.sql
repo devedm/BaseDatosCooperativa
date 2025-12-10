@@ -1,3 +1,4 @@
+-- Creacion de Tablas
 CREATE DATABASE Cooperativa;
 GO
 USE Cooperativa;
@@ -144,3 +145,6 @@ CREATE TABLE BitacoraAcceso (
     Fecha DATETIME2(0),
     FOREIGN KEY (UsuarioID) REFERENCES Usuario(UsuarioID)
 );
+
+
+

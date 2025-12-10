@@ -1,3 +1,5 @@
+-- Inserts --
+
 USE Cooperativa;
 --Inserts de la tabla Usuario--
 INSERT INTO Usuario (Cedula, Nombre, Apellido, Telefono, Correo) VALUES 
