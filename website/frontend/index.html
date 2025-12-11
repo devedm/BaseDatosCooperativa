@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cooperativa - Pruebas API</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    pre { max-height: 300px; overflow:auto; background:#f8f9fa; padding:1rem; border-radius:.25rem; }
+    .small-input { max-width:160px; display:inline-block; }
+  </style>
+</head>
+<body class="bg-light">
+  <nav class="navbar navbar-dark bg-primary mb-4">
+    <div class="container-fluid">
+      <span class="navbar-brand">Cooperativa — Pruebas API</span>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <div class="row mb-3">
+      <div class="col-md-8">
+        <h4>Controles de prueba</h4>
+        <div class="mb-2">
+          <button id="btn-cargar-todos" class="btn btn-success me-2">Cargar todos (GET /api/usuario)</button>
+          <button id="btn-ver-json" class="btn btn-outline-secondary me-2">Ver JSON crudo (GET /api/usuario)</button>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label me-2">Cargar por ID:</label>
+          <input id="input-id" class="form-control small-input me-2" placeholder="UsuarioID (ej: 1)" />
+          <button id="btn-cargar-id" class="btn btn-primary me-2">Cargar (GET /api/usuario/:id)</button>
+        </div>
+
+        <div class="mb-2">
+          <span id="estado" class="badge bg-info text-dark">Estado: inactivo</span>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <h5>Resultados</h5>
+        <div class="card p-2">
+          <strong>Última respuesta:</strong>
+          <pre id="panel-respuesta">—</pre>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="row">
+      <div class="col-12">
+        <h4>Tabla de Usuarios</h4>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>ID</th><th>Cédula</th><th>Nombre</th><th>Apellido</th><th>Teléfono</th><th>Correo</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-usuarios"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const API = "/api/usuario";
+    const estadoEl = document.getElementById('estado');
+    const panelRespuesta = document.getElementById('panel-respuesta');
+    const tabla = document.getElementById('tabla-usuarios');
+
+    function setEstado(text, type='info') {
+      estadoEl.textContent = 'Estado: ' + text;
+      estadoEl.className = 'badge bg-' + (type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info') + ' text-dark';
+    }
+
+    // Mostrar JSON bonito en el panel
+    function mostrarRespuesta(obj) {
+      try {
+        panelRespuesta.textContent = JSON.stringify(obj, null, 2);
+      } catch (e) {
+        panelRespuesta.textContent = String(obj);
+      }
+    }
+
+    // Limpiar tabla
+    function limpiarTabla() {
+      tabla.innerHTML = '';
+    }
+
+    // Llenar tabla con array de usuarios
+    function llenarTabla(usuarios) {
+      limpiarTabla();
+      if (!Array.isArray(usuarios)) {
+        tabla.innerHTML = '<tr><td colspan="7">Respuesta no es lista</td></tr>';
+        return;
+      }
+      if (usuarios.length === 0) {
+        tabla.innerHTML = '<tr><td colspan="7">No hay usuarios</td></tr>';
+        return;
+      }
+      usuarios.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${u.UsuarioID ?? ''}</td>
+          <td>${u.Cedula ?? ''}</td>
+          <td>${u.Nombre ?? ''}</td>
+          <td>${u.Apellido ?? ''}</td>
+          <td>${u.Telefono ?? ''}</td>
+          <td>${u.Correo ?? ''}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary" onclick="pruebaGetOne(${u.UsuarioID})">GET</button>
+          </td>
+        `;
+        tabla.appendChild(tr);
+      });
+    }
+
+    // Helper de fetch con manejo de errores
+    async function safeFetch(url, opts) {
+      setEstado('Solicitando ' + url + ' ...');
+      try {
+        const res = await fetch(url, opts);
+        const text = await res.text();
+        // intentar parsear JSON si es posible
+        try {
+          const json = JSON.parse(text);
+          setEstado('OK', 'success');
+          return { ok: res.ok, status: res.status, data: json };
+        } catch (e) {
+          setEstado('Respuesta no es JSON', 'error');
+          return { ok: res.ok, status: res.status, data: text };
+        }
+      } catch (err) {
+        setEstado('Error de conexión', 'error');
+        return { ok: false, status: 0, error: err.message || String(err) };
+      }
+    }
+
+    // Botón: cargar todos
+    async function cargarTodos() {
+      const r = await safeFetch(API);
+      if (r.ok) {
+        mostrarRespuesta(r.data);
+        llenarTabla(r.data);
+      } else {
+        mostrarRespuesta(r.error ?? ('HTTP ' + r.status));
+      }
+    }
+
+    // Botón: ver JSON crudo
+    async function verJsonCrudo() {
+      const r = await safeFetch(API);
+      if (r.ok) mostrarRespuesta(r.data);
+      else mostrarRespuesta(r.error ?? ('HTTP ' + r.status));
+    }
+
+    // Botón: cargar por ID
+    async function cargarPorId() {
+      const id = document.getElementById('input-id').value.trim();
+      if (!id) { alert('Ingresa un ID'); return; }
+      const r = await safeFetch(API + '/' + encodeURIComponent(id));
+      if (r.ok) {
+        mostrarRespuesta(r.data);
+        // si devuelve un objeto, mostramos en tabla una fila
+        if (r.data && typeof r.data === 'object' && !Array.isArray(r.data)) {
+          llenarTabla([r.data]);
+        } else {
+          // si devuelve array o texto
+          if (Array.isArray(r.data)) llenarTabla(r.data);
+          else panelRespuesta.textContent = JSON.stringify(r.data, null, 2);
+        }
+      } else {
+        mostrarRespuesta(r.error ?? ('HTTP ' + r.status));
+      }
+    }
+
+    // Botón en la tabla para hacer GET individual (misma ruta que cargarPorId)
+    async function pruebaGetOne(id) {
+      const r = await safeFetch(API + '/' + encodeURIComponent(id));
+      if (r.ok) {
+        mostrarRespuesta(r.data);
+      } else {
+        mostrarRespuesta(r.error ?? ('HTTP ' + r.status));
+      }
+    }
+
+    // Wire up buttons
+    document.getElementById('btn-cargar-todos').addEventListener('click', cargarTodos);
+    document.getElementById('btn-ver-json').addEventListener('click', verJsonCrudo);
+    document.getElementById('btn-cargar-id').addEventListener('click', cargarPorId);
+
+    // Cargar al inicio para facilitar pruebas
+    // comentar si no quieres carga automática
+    // cargarTodos();
+  </script>
+</body>
+</html>
