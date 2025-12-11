@@ -147,12 +147,13 @@ CREATE TABLE BitacoraAcceso (
     FOREIGN KEY (UsuarioID) REFERENCES Usuario(UsuarioID)
 );
 
+
 -- Inserts --
 
 USE Cooperativa;
 --Inserts de la tabla Usuario--
 INSERT INTO Usuario (Cedula, Nombre, Apellido, Telefono, Correo) VALUES 
-('110000001',N'Ana',N'Rodríguez',N'60000001',N'ana.rodriguez1@correo.com'),
+('110000001',N'ADMIN',N'ADMINISTRADOR',N'60000001',N'administrador@correo.com'),
 ('110000002',N'Luis',N'González',N'60000002',N'luis.gonzalez2@correo.com'),
 ('110000003',N'María',N'Jiménez',N'60000003',N'maria.jimenez3@correo.com'),
 ('110000004',N'Carlos',N'Mora',N'60000004',N'carlos.mora4@correo.com'),
@@ -1176,7 +1177,7 @@ BEGIN
 END;
 GO
 
--- Crear Incidencia
+-- Crear Incidencia --
 -- SP para crear una incidencia con toda la informacion necesaria y luego la 
 USE Cooperativa;
 GO
